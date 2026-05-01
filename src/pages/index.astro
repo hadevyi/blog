@@ -1,0 +1,180 @@
+---
+import { getCollection } from 'astro:content';
+import ContentCard from '../components/ContentCard.astro';
+import PageIntro from '../components/PageIntro.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { formatDate } from '../utils/format';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf()
+);
+
+const categories = [...new Set(posts.map((post) => post.data.category))];
+const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
+---
+
+<BaseLayout>
+  <div class="space-y-12">
+    <PageIntro
+      eyebrow="Blog"
+      title="긴 설명이 필요한 설계와 기술 메모를 남기는 블로그"
+      description="이 페이지 역시 기존 시각 디자인은 모두 제거했습니다. 지금은 어떤 글을 어떤 분류로 남길지 확인할 수 있는 최소 구조만 유지합니다."
+    />
+
+    <section class="surface-card p-6" data-archive-root="blog">
+      <h2 class="type-section-title text-ink">
+        검색과 분류
+      </h2>
+
+      <label class="mt-5 block">
+        <span class="sr-only">블로그 글 검색</span>
+        <input
+          type="search"
+          class="archive-input"
+          placeholder="제목, 발췌, 카테고리, 태그 검색"
+          data-archive-search
+        />
+      </label>
+
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="filter-chip-button filter-chip-button-active"
+          data-category-button
+          data-category-value="all"
+        >
+          전체 카테고리
+        </button>
+        {
+          categories.map((category) => (
+            <button
+              type="button"
+              class="filter-chip-button"
+              data-category-button
+              data-category-value={category}
+            >
+              {category}
+            </button>
+          ))
+        }
+      </div>
+
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="filter-chip-button filter-chip-button-active"
+          data-tag-button
+          data-tag-value="all"
+        >
+          전체 태그
+        </button>
+        {
+          tags.map((tag) => (
+            <button
+              type="button"
+              class="filter-chip-button"
+              data-tag-button
+              data-tag-value={tag}
+            >
+              {tag}
+            </button>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="space-y-4">
+      <h2 class="type-section-title text-ink">
+        글 목록
+      </h2>
+      <div class="grid gap-4" data-archive-list>
+        {
+          posts.map((post) => (
+            <div
+              data-archive-item
+              data-search={`${post.data.title} ${post.data.excerpt} ${post.data.category} ${post.data.tags.join(' ')}`.toLowerCase()}
+              data-category={post.data.category}
+              data-tags={post.data.tags.join('|')}
+            >
+              <ContentCard
+                href={`/blog/${post.id}/`}
+                title={post.data.title}
+                description={post.data.excerpt}
+                meta={`${formatDate(post.data.publishedAt)} · ${post.data.category}`}
+                tags={post.data.tags}
+              />
+            </div>
+          ))
+        }
+      </div>
+
+      <p class="type-small text-ink/58" data-archive-empty hidden>
+        현재 조건에 맞는 글이 없습니다.
+      </p>
+    </section>
+  </div>
+
+  <script is:inline>
+    (() => {
+      const root = document.querySelector('[data-archive-root="blog"]');
+      if (!root) return;
+
+      const input = root.querySelector('[data-archive-search]');
+      const items = Array.from(document.querySelectorAll('[data-archive-item]'));
+      const categoryButtons = Array.from(root.querySelectorAll('[data-category-button]'));
+      const tagButtons = Array.from(root.querySelectorAll('[data-tag-button]'));
+      const empty = document.querySelector('[data-archive-empty]');
+
+      let activeCategory = 'all';
+      let activeTag = 'all';
+
+      const apply = () => {
+        const query = input instanceof HTMLInputElement ? input.value.trim().toLowerCase() : '';
+        let visibleCount = 0;
+
+        items.forEach((item) => {
+          const searchValue = (item.getAttribute('data-search') || '').toLowerCase();
+          const category = item.getAttribute('data-category') || '';
+          const itemTags = (item.getAttribute('data-tags') || '').split('|').filter(Boolean);
+          const matchesQuery = !query || searchValue.includes(query);
+          const matchesCategory = activeCategory === 'all' || category === activeCategory;
+          const matchesTag = activeTag === 'all' || itemTags.includes(activeTag);
+          const isVisible = matchesQuery && matchesCategory && matchesTag;
+
+          item.toggleAttribute('hidden', !isVisible);
+          if (isVisible) visibleCount += 1;
+        });
+
+        if (empty instanceof HTMLElement) {
+          empty.hidden = visibleCount !== 0;
+        }
+      };
+
+      categoryButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          activeCategory = button.getAttribute('data-category-value') || 'all';
+          categoryButtons.forEach((candidate) => {
+            candidate.classList.toggle('filter-chip-button-active', candidate === button);
+          });
+          apply();
+        });
+      });
+
+      tagButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          activeTag = button.getAttribute('data-tag-value') || 'all';
+          tagButtons.forEach((candidate) => {
+            candidate.classList.toggle('filter-chip-button-active', candidate === button);
+          });
+          apply();
+        });
+      });
+
+      if (input instanceof HTMLInputElement) {
+        input.addEventListener('input', apply);
+      }
+
+      apply();
+    })();
+  </script>
+</BaseLayout>

@@ -1,0 +1,59 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteMeta } from '../data/site';
+import { formatDate } from '../utils/format';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post }
+  }));
+}
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<BaseLayout title={post.data.title} description={post.data.excerpt}>
+  <article class="space-y-10">
+    <section class="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
+      <div>
+        <p class="eyebrow">Post</p>
+        <h1 class="type-display mt-5 text-ink">
+          {post.data.title}
+        </h1>
+        <p class="type-body mt-6 max-w-2xl text-ink/72">
+          {post.data.excerpt}
+        </p>
+      </div>
+
+      <div class="surface-card p-6 sm:p-7">
+        <p class="type-label-wide uppercase text-ink/40">Meta</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="chip">{formatDate(post.data.publishedAt)}</span>
+          <span class="chip">{post.data.category}</span>
+          {post.data.tags.map((tag) => <span class="chip">{tag}</span>)}
+        </div>
+
+        <div class="mt-7">
+          <a href={siteMeta.rootPath} class="button-primary type-small px-4 py-2">
+            목록으로 돌아가기
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="surface-card p-8 sm:p-10 lg:p-12">
+      <div class="rich-text mx-auto max-w-3xl">
+        <Content />
+      </div>
+    </section>
+  </article>
+</BaseLayout>
