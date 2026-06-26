@@ -1,0 +1,99 @@
+---
+number: '0008'
+title: '[Github Blog] 파비콘(Favicon) 세팅하기'
+excerpt: 'minimal-mistakes 기반 GitHub Blog에서 favicon 이미지를 준비하고 custom.html에 적용하는 과정을 정리합니다.'
+cover: '/blog/images/posts/0008/cover.png'
+category: 'Github Blog'
+series: 'github-io-blog-jekyll'
+tags:
+  - '기술블로그'
+  - 'Jekyll'
+  - '설정'
+  - '커스터마이징'
+publishedAt: 2020-10-11
+draft: false
+---
+
+파비콘(Favicon)이란, 인터넷 웹 브라우저의 주소창에 표시되는 대표 아이콘입니다.<br />
+기본적으로 세팅해두지 않으면,
+
+![image](/blog/images/posts/0008/browser-default-icon.png)
+
+
+크롬을 기준으로 이러한 지구본 모양만 보여지게 됩니다.<br />
+블로그의 정체성을 나타내기 위해선, 지구본보단 원하는 모양으로 바꾸는게 좋겠죠!
+
+
+# 원하는 이미지 찾기
+
+이미지는 직접 만드셔도 좋고, 찾으셔도 좋습니다.<br />
+저같은 경우엔 직접 만들 자신이 없어서 픽토그램을 사용해서 만들기로 했습니다.<br />
+자주 사용하던 flaticon을 이용해서 했지만, 이외에도 많은 사이트가 많습니다!
+
+- [flaticon](https://www.flaticon.com/)
+- [Icooon-mono](https://icooon-mono.com/)
+- [Thenounproject](https://thenounproject.com/)
+- [Iconfinder](https://www.iconfinder.com/)
+- [Freepik](https://www.freepik.com/)
+- [FreeVectors](https://www.freevectors.net/)
+
+제가 결정한 이미지는 이 이미지입니다.
+
+
+![apple-icon-60x60](/blog/images/posts/0008/apple-icon-60x60.png)
+
+이 이미지를 이용해 파비콘으로 등록해보겠습니다.
+
+
+# favicon icon 만들기
+
+[realfavicongenerator](https://realfavicongenerator.net/)에 접속해서 원하는 사진을 넣어주세요.
+
+![image](/blog/images/posts/0008/realfavicon-generator-upload.png)
+
+흰색 버튼을 보면 Random도 있어서 고민이 되신다면 random하게 받아보시는 것도 좋습니다.
+
+![image](/blog/images/posts/0008/favicon-preview.png)
+
+해당 사이트에서는 이렇게 각 환경에서 적용되는 모습도 보여줍니다.<br />
+이렇게 정리한 후 다운로드를 받으시면 압축 폴더를 받으실 수 있습니다.<br />
+정리한 모든 파일을 assets 내의 logo.ico라는 폴더를 만들어 정리해주세요.
+
+
+![image](/blog/images/posts/0008/favicon-files.png)
+
+이렇게 정리하셨으면 1차적으로 정리가 완료되셨습니다.<br />
+가장 하단에서 Generate your Favicons and HTML code 버튼을 눌러주세요.
+
+![image](/blog/images/posts/0008/favicon-html-code.png)
+
+그럼 이 코드를 보실 수 있습니다.<br />
+이 코드를 활용해서 블로그에 적용해봅시다.
+
+
+# custom.html 수정
+
+- 수정 파일 : github.io 폴더 > _includes 폴더 > _head 폴더 > custom.html
+
+```html
+<!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+<link rel="apple-touch-icon" sizes="180x180" href="{{site.baseurl}}/assets/logo.ico/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="{{site.baseurl}}/assets/logo.ico/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="{{site.baseurl}}/assets/logo.ico/favicon-16x16.png">
+<link rel="mask-icon" href="{{site.baseurl}}/assets/logo.ico/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+
+<!-- end custom head snippets -->
+```
+
+최종적으로 업데이트 된 코드는 이와 같습니다.<br />
+처음 받은 코드와 다른 내용은 href의 영역 즉 상세 링크입니다.<br />
+파일 이름 앞에 {`{{site.baseurl}}`}/assets/logo.ico 를 추가해주시면 됩니다.<br />
+html에서 변수를 호출하기 위해서는 중괄호가 꼭 이중으로 있어야 합니다.
+
+![image](/blog/images/posts/0008/favicon-result.png)
+
+이렇게 최종적으로 적용된 모습을 확인하실 수 있습니다.

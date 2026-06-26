@@ -1,0 +1,89 @@
+---
+number: '0012'
+title: '[Github Blog] 방문자 통계(Analytics)하기'
+excerpt: 'minimal-mistakes 기반 GitHub Blog에 Google Analytics를 연결하고 tracking ID와 _config.yml 설정을 정리합니다.'
+cover: '/blog/images/posts/0012/cover.png'
+category: 'Github Blog'
+series: 'github-io-blog-jekyll'
+tags:
+  - '기술블로그'
+  - 'Jekyll'
+  - '블로그 운영'
+  - '분석·검색'
+publishedAt: 2020-12-16
+draft: false
+---
+
+블로그를 운영하는 가장 큰 힘이자 원동력이 아무래도 방문자겠죠.<br />
+그래서 얼마만큼의 방문자가 접속했는지가 가장 궁금하게 됩니다.<br />
+따라서 이를 분석해서 제공해주는 google Analytics를 적용해보고자 합니다.
+
+
+# Google Analytics 등록하기
+
+1) [Google Analytics](https://analytics.google.com/analytics/web/) 에 접속하시면 무료로 시작할 수 있습니다. 당연히도 Google 계정이 필요하니 로그인해주세요.
+
+![image](/blog/images/posts/0012/analytics-start.png)
+
+2) 1단계입니다. 계정 이름은 통계에는 영향이 없어서 자유롭게 지어주시면 됩니다.
+
+![image](/blog/images/posts/0012/analytics-account.png)
+
+3) 블로그 주소를 속성 이름으로 등록하시고, 보고 시간대를 정리해주세요.<br />
+물론 현재는 제가 넣은 방법으로 기재한 것입니다! 다른 시간대를 원하면 그렇게 설정해주셔도 됩니다.
+
+![image](/blog/images/posts/0012/analytics-property.png)
+
+이전 댓글 기능을 추가했을때 shortname을 추가하신 것 기억나시나요?<br />
+역시 여기서도 찾아야할 이름이 필요합니다.<br />
+google analytics에서는 `tracking_id` 라고 하는데, 꼭꼭 숨겨져 있어서 찾기 힘들때가 있어서 기재해봅니다.
+
+
+# tracking ID 찾기
+
+1) Analystics의 가장 하단에 있는 관리 버튼을 찾아주세요.
+
+![image](/blog/images/posts/0012/analytics-admin.png)
+
+2) 관리자-사용자 관리 화면이 뜨며, 데이터 스트림 버튼을 찾아주세요.
+
+![image](/blog/images/posts/0012/analytics-data-stream.png)
+
+3) 스트림 목록의 현재의 Github Blog 주소를 찾아서 클릭하세요.
+
+![image](/blog/images/posts/0012/analytics-stream-list.png)
+
+4) 우측 상단에 tracking ID를 찾으실 수 있습니다.
+
+![image](/blog/images/posts/0012/analytics-tracking-id.png)
+
+
+# _config.yml 수정하기
+
+- 수정 파일 : github.io 폴더 > _config.yml
+
+```yml
+# Analytics
+analytics:
+  provider               : "google-gtag"
+                          # false (default), "google", "google-universal", "google-gtag", "custom"
+  google:
+    tracking_id          : "G-5HQPK7RHNC"
+    anonymize_ip         : # true, false (default)
+```
+
+위의 코드를 모두 작성한 후 git push해주세요.<br />
+댓글 기능보다는 빠르게 반영이 됩니다.<br />
+tracking id만 헷갈리지 않으시다면, 지금까지 한 기능 중에 제일 쉬울꺼에요 :)
+
+
+# ANALYTICS TEST
+
+![04](/blog/images/posts/0012/analytics-test.png)
+
+이제 다시 접속하시면 방문자 수가 카운딩됩니다.<br />
+tracking_id를 연결하실때부터 카운딩이 되기 때문에, 처음보시는 화면은 지금 보여드리는 사진과는 다를껍니다.
+
+일자마다 그래프가 생성되고 현재 실시간으로 보고있는 인원도 볼 수 있고,<br />
+어떤 포스팅을 많이 보는지도 볼 수 있습니다.<br />
+포스팅 전에 이미 연결한 후 주위 분들께 미리 보여드려서 카운팅이 이미있는 화면이네요 (ㅋㅋㅋ)
