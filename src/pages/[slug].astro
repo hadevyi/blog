@@ -3,57 +3,278 @@ import { getCollection, render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { siteMeta } from '../data/site';
 import { formatDate } from '../utils/format';
+import { getSeriesName, getSeriesUrl } from '../utils/blog';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort((a, b) =>
+    a.data.number.localeCompare(b.data.number)
+  );
 
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post }
-  }));
+  return posts.map((post, index) => {
+    const seriesPosts = posts.filter((item) => item.data.series === post.data.series);
+    const seriesIndex = seriesPosts.findIndex((item) => item.data.number === post.data.number);
+
+    return {
+      params: { slug: post.data.number },
+      props: {
+        post,
+        overallPreviousPost: posts[index - 1] ?? null,
+        overallNextPost: posts[index + 1] ?? null,
+        seriesPreviousPost: seriesPosts[seriesIndex - 1] ?? null,
+        seriesNextPost: seriesPosts[seriesIndex + 1] ?? null
+      }
+    };
+  });
 }
 
 interface Props {
   post: CollectionEntry<'blog'>;
+  overallPreviousPost: CollectionEntry<'blog'> | null;
+  overallNextPost: CollectionEntry<'blog'> | null;
+  seriesPreviousPost: CollectionEntry<'blog'> | null;
+  seriesNextPost: CollectionEntry<'blog'> | null;
 }
 
-const { post } = Astro.props;
-const { Content } = await render(post);
+const { post, overallPreviousPost, overallNextPost, seriesPreviousPost, seriesNextPost } =
+  Astro.props;
+const { Content, headings } = await render(post);
+const seriesName = getSeriesName(post.data.series);
+const postInitial = post.data.title.slice(0, 1);
+const getPostUrl = (targetPost: CollectionEntry<'blog'>) => `${siteMeta.rootPath}${targetPost.data.number}/`;
+const postIndexHeadings = headings.filter((heading) => heading.depth === 1 || heading.depth === 2);
+const postUrl = new URL(`${siteMeta.rootPath}${post.data.number}/`, siteMeta.siteUrl).toString();
+const postImage = post.data.cover ? new URL(post.data.cover, siteMeta.siteUrl).toString() : undefined;
+const postStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: post.data.title,
+  description: post.data.excerpt,
+  url: postUrl,
+  datePublished: post.data.publishedAt.toISOString(),
+  dateModified: post.data.publishedAt.toISOString(),
+  author: {
+    '@type': 'Person',
+    name: 'Dang Hyeona',
+    url: 'https://hadevyi.github.io/'
+  },
+  publisher: {
+    '@type': 'Person',
+    name: 'Dang Hyeona',
+    url: 'https://hadevyi.github.io/'
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': postUrl
+  },
+  keywords: [post.data.category, seriesName, ...post.data.tags]
+};
 ---
 
-<BaseLayout title={post.data.title} description={post.data.excerpt}>
-  <article class="space-y-10">
-    <section class="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
-      <div>
-        <p class="eyebrow">Post</p>
-        <h1 class="type-display mt-5 text-ink">
-          {post.data.title}
-        </h1>
-        <p class="type-body mt-6 max-w-2xl text-ink/72">
-          {post.data.excerpt}
-        </p>
+<BaseLayout
+  title={post.data.title}
+  description={post.data.excerpt}
+  image={postImage}
+  type="article"
+  publishedAt={post.data.publishedAt}
+  updatedAt={post.data.publishedAt}
+  structuredData={postStructuredData}
+>
+  <div class="blog-reading-progress" aria-hidden="true">
+    <span data-reading-progress-bar></span>
+  </div>
+
+  <article class="blog-post-detail">
+    <a href={siteMeta.rootPath} class="blog-post-back-link">← 목록으로 돌아가기</a>
+
+    <section class="blog-post-hero">
+      <div class="blog-post-cover">
+        {
+          post.data.cover ? (
+            <img src={post.data.cover} alt="" loading="eager" />
+          ) : (
+            <div class="blog-post-cover-placeholder" aria-hidden="true">
+              {postInitial}
+            </div>
+          )
+        }
       </div>
 
-      <div class="surface-card p-6 sm:p-7">
-        <p class="type-label-wide uppercase text-ink/40">Meta</p>
-        <div class="mt-4 flex flex-wrap gap-2">
-          <span class="chip">{formatDate(post.data.publishedAt)}</span>
-          <span class="chip">{post.data.category}</span>
-          {post.data.tags.map((tag) => <span class="chip">{tag}</span>)}
+      <div class="blog-post-heading">
+        <div class="blog-post-meta-line">
+          <a href={getSeriesUrl(post.data.series)}>{seriesName}</a>
+          <span aria-hidden="true">·</span>
+          <time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time>
         </div>
-
-        <div class="mt-7">
-          <a href={siteMeta.rootPath} class="button-primary type-small px-4 py-2">
-            목록으로 돌아가기
-          </a>
+        <h1>{post.data.title}</h1>
+        <p>{post.data.excerpt}</p>
+        <div class="blog-post-tags">
+          <span>{post.data.category}</span>
+          {post.data.tags.map((tag) => <span>#{tag}</span>)}
         </div>
       </div>
     </section>
 
-    <section class="surface-card p-8 sm:p-10 lg:p-12">
-      <div class="rich-text mx-auto max-w-3xl">
+    <div class="blog-post-reading-layout">
+      <section class="blog-post-body rich-text">
         <Content />
-      </div>
-    </section>
+      </section>
+
+      {
+        postIndexHeadings.length > 0 && (
+          <aside class="blog-post-index" aria-label="본문 목차">
+            <nav class="blog-post-index-nav">
+              {postIndexHeadings.map((heading) => (
+                <a
+                  href={`#${heading.slug}`}
+                  title={heading.text}
+                  class:list={[
+                    'blog-post-index-link',
+                    heading.depth === 1 && 'blog-post-index-link-primary',
+                    heading.depth === 2 && 'blog-post-index-link-secondary'
+                  ]}
+                  data-heading-index-link={heading.slug}
+                >
+                  {heading.text}
+                </a>
+              ))}
+            </nav>
+          </aside>
+        )
+      }
+    </div>
+
+    <nav class="blog-post-navigation" aria-label="글 이동">
+      <section class="blog-post-navigation-group">
+        <h2>시리즈 글</h2>
+        <div class="blog-post-navigation-links">
+          {
+            seriesPreviousPost ? (
+              <a href={getPostUrl(seriesPreviousPost)} class="blog-post-navigation-link">
+                <span>이전</span>
+                <strong>{seriesPreviousPost.data.title}</strong>
+              </a>
+            ) : (
+              <p class="blog-post-navigation-link blog-post-navigation-link-disabled">
+                <span>이전</span>
+                <strong>이전 글 없음</strong>
+              </p>
+            )
+          }
+          {
+            seriesNextPost ? (
+              <a href={getPostUrl(seriesNextPost)} class="blog-post-navigation-link blog-post-navigation-link-next">
+                <span>다음</span>
+                <strong>{seriesNextPost.data.title}</strong>
+              </a>
+            ) : (
+              <p class="blog-post-navigation-link blog-post-navigation-link-disabled blog-post-navigation-link-next">
+                <span>다음</span>
+                <strong>다음 글 없음</strong>
+              </p>
+            )
+          }
+        </div>
+      </section>
+
+      <section class="blog-post-navigation-group">
+        <h2>전체 글</h2>
+        <div class="blog-post-navigation-links">
+          {
+            overallPreviousPost ? (
+              <a href={getPostUrl(overallPreviousPost)} class="blog-post-navigation-link">
+                <span>이전</span>
+                <strong>{overallPreviousPost.data.title}</strong>
+              </a>
+            ) : (
+              <p class="blog-post-navigation-link blog-post-navigation-link-disabled">
+                <span>이전</span>
+                <strong>이전 글 없음</strong>
+              </p>
+            )
+          }
+          {
+            overallNextPost ? (
+              <a href={getPostUrl(overallNextPost)} class="blog-post-navigation-link blog-post-navigation-link-next">
+                <span>다음</span>
+                <strong>{overallNextPost.data.title}</strong>
+              </a>
+            ) : (
+              <p class="blog-post-navigation-link blog-post-navigation-link-disabled blog-post-navigation-link-next">
+                <span>다음</span>
+                <strong>다음 글 없음</strong>
+              </p>
+            )
+          }
+        </div>
+      </section>
+    </nav>
   </article>
+
+  <script>
+    const initReadingProgress = () => {
+      const progressBar = document.querySelector<HTMLElement>('[data-reading-progress-bar]');
+      const postDetail = document.querySelector<HTMLElement>('.blog-post-detail');
+      const postBody = document.querySelector<HTMLElement>('.blog-post-body');
+
+      if (!progressBar || !postDetail || !postBody) return;
+
+      const updateReadingProgress = () => {
+        const start = postDetail.offsetTop;
+        const end = postBody.offsetTop + postBody.offsetHeight - window.innerHeight;
+        const distance = Math.max(end - start, 1);
+        const current = window.scrollY - start;
+        const progress = Math.min(Math.max(current / distance, 0), 1);
+
+        progressBar.style.transform = `scaleX(${progress})`;
+      };
+
+      updateReadingProgress();
+      window.addEventListener('scroll', updateReadingProgress, { passive: true });
+      window.addEventListener('resize', updateReadingProgress);
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initReadingProgress, { once: true });
+    } else {
+      initReadingProgress();
+    }
+
+    const indexLinks = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('[data-heading-index-link]')
+    );
+    const indexedHeadings = indexLinks
+      .map((link) => {
+        const id = link.dataset.headingIndexLink;
+        const heading = id ? document.getElementById(id) : null;
+        return heading ? { heading, link } : null;
+      })
+      .filter((item): item is { heading: HTMLElement; link: HTMLAnchorElement } => Boolean(item));
+
+    if (indexedHeadings.length > 0) {
+      const setActiveIndexLink = (activeId: string) => {
+        indexLinks.forEach((link) => {
+          link.toggleAttribute('aria-current', link.dataset.headingIndexLink === activeId);
+        });
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visibleHeading = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]?.target;
+
+          if (visibleHeading?.id) {
+            setActiveIndexLink(visibleHeading.id);
+          }
+        },
+        {
+          rootMargin: '-18% 0px -68% 0px',
+          threshold: 0
+        }
+      );
+
+      indexedHeadings.forEach(({ heading }) => observer.observe(heading));
+      setActiveIndexLink(indexedHeadings[0].heading.id);
+    }
+  </script>
 </BaseLayout>

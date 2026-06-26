@@ -2,8 +2,14 @@
 import { mainNav, siteMeta } from '../data/site';
 
 const pathname = Astro.url.pathname;
-const isCurrentPath = (href: string, external?: boolean) => {
-  if (external) return false;
+const navLabelEn = {
+  목록: 'Posts',
+  시리즈: 'Series',
+  태그: 'Tags'
+} as const;
+const isCurrentPath = (href: string) => {
+  if (href.startsWith('#')) return false;
+  if (href === '/blog/') return pathname === '/blog/' || pathname === '/blog';
   return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href);
 };
 ---
@@ -11,19 +17,21 @@ const isCurrentPath = (href: string, external?: boolean) => {
 <header class="site-header">
   <div class="site-header-inner">
     <a href={siteMeta.rootPath} class="site-title-link">
-      <span class="site-title">{siteMeta.brand}</span>
-      <span class="site-subtitle">{siteMeta.subtitle}</span>
+      <span class="site-title" data-i18n-ko={siteMeta.brand} data-i18n-en="Dang Hyeona Blog">{siteMeta.brand}</span>
+      <span class="site-subtitle" data-i18n-ko={siteMeta.subtitle} data-i18n-en="Developer pursuing the value of sharing">{siteMeta.subtitle}</span>
     </a>
 
     <nav class="site-nav" aria-label="주요 이동">
       {
         mainNav.map((item) => {
-          const isCurrent = isCurrentPath(item.href, 'external' in item ? item.external : false);
+          const isCurrent = isCurrentPath(item.href);
           return (
             <a
               href={item.href}
               aria-current={isCurrent ? 'page' : undefined}
               class:list={['site-nav-link', isCurrent && 'site-nav-link-current']}
+              data-i18n-ko={item.label}
+              data-i18n-en={navLabelEn[item.label] ?? item.label}
             >
               {item.label}
             </a>
@@ -31,5 +39,21 @@ const isCurrentPath = (href: string, external?: boolean) => {
         })
       }
     </nav>
+
+    <form class="site-header-search" action="/blog/" method="get" role="search">
+      <label>
+        <span class="sr-only">블로그 검색</span>
+        <input
+          type="search"
+          name="q"
+          class="site-header-search-input"
+          placeholder="블로그 검색"
+          data-i18n-ko="블로그 검색"
+          data-i18n-en="Search blog"
+          data-i18n-attr="placeholder"
+          data-blog-search
+        />
+      </label>
+    </form>
   </div>
 </header>

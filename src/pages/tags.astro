@@ -1,0 +1,128 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { blogTags, getTagMeta, getTagSlug, getTagUrl } from '../utils/blog';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf()
+);
+
+const tagCounts = posts.reduce<Record<string, number>>((counts, post) => {
+  post.data.tags.forEach((tag) => {
+    const slug = getTagSlug(tag);
+    counts[slug] = (counts[slug] || 0) + 1;
+  });
+
+  return counts;
+}, {});
+
+const tagEntries = blogTags
+  .map((tag) => ({
+    ...tag,
+    count: tagCounts[tag.slug] || 0
+  }))
+  .filter((tag) => tag.count > 0)
+  .sort((a, b) => b.count - a.count || a.ko.localeCompare(b.ko, 'ko-KR'));
+
+const fallbackTags = Object.keys(tagCounts)
+  .filter((slug) => !blogTags.some((tag) => tag.slug === slug))
+  .map((slug) => ({
+    ...getTagMeta(slug),
+    count: tagCounts[slug]
+  }));
+
+const allTagEntries = [...tagEntries, ...fallbackTags];
+---
+
+<BaseLayout title="태그" description="블로그 글을 주제와 성격별 태그로 모아보는 페이지입니다.">
+  <div class="space-y-4" data-tags-root>
+    <div class="blog-list-header">
+      <span class="sr-only">태그 목록</span>
+      <div class="blog-list-tools">
+        <p class="type-small text-ink/58">
+          {allTagEntries.length} / {allTagEntries.length}
+        </p>
+        <div class="blog-sort-toggle" aria-label="태그 정렬">
+          <button
+            type="button"
+            class="blog-sort-button blog-sort-button-active"
+            data-tag-sort-button
+            data-sort-value="count"
+          >
+            <span data-i18n-ko="글 많은순" data-i18n-en="Most used">글 많은순</span>
+          </button>
+          <span class="blog-sort-separator" aria-hidden="true">|</span>
+          <button type="button" class="blog-sort-button" data-tag-sort-button data-sort-value="name">
+            <span data-i18n-ko="ㄱㄴㄷ순" data-i18n-en="A-Z">ㄱㄴㄷ순</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="blog-tag-grid" data-tag-list>
+      {
+        allTagEntries.map((tag) => (
+          <a
+            class="blog-tag-card"
+            href={getTagUrl(tag.slug)}
+            data-tag-card
+            data-tag-name={tag.ko}
+            data-tag-count={tag.count}
+          >
+            <span class="blog-tag-card-name" data-i18n-ko={tag.ko} data-i18n-en={tag.en}>{tag.ko}</span>
+            <span
+              class="blog-tag-card-count"
+              data-i18n-ko={`${tag.count}개 글`}
+              data-i18n-en={`${tag.count} posts`}
+            >
+              {tag.count}개 글
+            </span>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+
+  <script is:inline>
+    (() => {
+      const list = document.querySelector('[data-tag-list]');
+      if (!(list instanceof HTMLElement)) return;
+
+      const cards = Array.from(document.querySelectorAll('[data-tag-card]'));
+      const sortButtons = Array.from(document.querySelectorAll('[data-tag-sort-button]'));
+      let activeSort = 'count';
+
+      const getSortedCards = () =>
+        [...cards].sort((a, b) => {
+          if (activeSort === 'name') {
+            const aName = a.getAttribute('data-tag-name') || '';
+            const bName = b.getAttribute('data-tag-name') || '';
+            return aName.localeCompare(bName, 'ko-KR');
+          }
+
+          const aCount = Number(a.getAttribute('data-tag-count') || 0);
+          const bCount = Number(b.getAttribute('data-tag-count') || 0);
+          return bCount - aCount;
+        });
+
+      const applySort = () => {
+        getSortedCards().forEach((card) => list.appendChild(card));
+        sortButtons.forEach((button) => {
+          button.classList.toggle(
+            'blog-sort-button-active',
+            button.getAttribute('data-sort-value') === activeSort
+          );
+        });
+      };
+
+      sortButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          activeSort = button.getAttribute('data-sort-value') || 'count';
+          applySort();
+        });
+      });
+
+      applySort();
+    })();
+  </script>
+</BaseLayout>

@@ -35,13 +35,15 @@ const usageNotice =
 const analyticsNotice =
   '본 사이트는 서비스 개선과 방문 통계 확인을 위해 Google Analytics를 사용합니다.\nGoogle Analytics는 방문 페이지, 접속 환경, 대략적인 지역 정보 등 비식별 분석 데이터를 수집할 수 있습니다.\n수집된 데이터는 사이트 이용 현황을 파악하고 콘텐츠와 사용성을 개선하는 목적으로만 활용됩니다.';
 const copyrightNotice = '© 2026 Dang Hyeona. All rights reserved.';
+const brandLabel = '당현아 공식 홈페이지';
+const brandLabelEn = 'Dang Hyeona Official Website';
 ---
 
 <footer class="site-footer">
   <div class="mx-auto flex w-full max-w-[62rem] flex-col gap-2 px-5 py-4 sm:px-8 lg:px-10">
     <div class="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
       <div class="type-caption flex flex-wrap items-center gap-x-3 gap-y-1.5 text-ink/55">
-        <p class="font-medium text-ink/78">{siteMeta.brand}</p>
+        <p class="font-medium text-ink/78" data-i18n-ko={brandLabel} data-i18n-en={brandLabelEn}>{brandLabel}</p>
         <SocialIconLinks links={contactLinks} compact={true} />
       </div>
 
@@ -56,7 +58,22 @@ const copyrightNotice = '© 2026 Dang Hyeona. All rights reserved.';
                 aria-current={isCurrent ? 'page' : undefined}
                 class:list={[isCurrent ? 'footer-inline-link-current' : 'footer-inline-link']}
               >
-                {item.label}
+                <span
+                  data-i18n-ko={item.label}
+                  data-i18n-en={
+                    item.label === '공식 홈페이지'
+                      ? 'Home'
+                      : item.label === '이력서'
+                        ? 'Resume'
+                        : item.label === '포트폴리오'
+                          ? 'Portfolio'
+                          : item.label === '경험 정리'
+                            ? 'Experience'
+                            : 'Blog'
+                  }
+                >
+                  {item.label}
+                </span>
               </a>
             );
           })
@@ -68,13 +85,23 @@ const copyrightNotice = '© 2026 Dang Hyeona. All rights reserved.';
       <p>{copyrightNotice}</p>
       <div class="footer-legal-notices">
         <details class="footer-legal-notice">
-          <summary>이용 및 저작권 안내</summary>
-          <p>{usageNotice}</p>
+          <summary data-i18n-ko="이용 및 저작권 안내" data-i18n-en="Usage and copyright notice">이용 및 저작권 안내</summary>
+          <p data-i18n-content="ko">{usageNotice}</p>
+          <p data-i18n-content="en" hidden>
+            This site allows normal public search engine indexing.
+            Unauthorized bulk crawling, collection, copying, redistribution, reuse, impersonation, or false use is prohibited.
+            Legal action may be taken for violations.
+          </p>
         </details>
         <span class="footer-legal-separator" aria-hidden="true">|</span>
         <details class="footer-legal-notice">
-          <summary>분석 도구 안내</summary>
-          <p>{analyticsNotice}</p>
+          <summary data-i18n-ko="분석 도구 안내" data-i18n-en="Analytics notice">분석 도구 안내</summary>
+          <p data-i18n-content="ko">{analyticsNotice}</p>
+          <p data-i18n-content="en" hidden>
+            This site may use Google Analytics to review visit statistics and improve the service.
+            Google Analytics may collect non-identifying analytics data such as visited pages, access environment, and approximate region.
+            Collected data is used only to understand site usage and improve content and usability.
+          </p>
         </details>
       </div>
     </div>

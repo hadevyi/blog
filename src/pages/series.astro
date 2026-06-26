@@ -1,0 +1,186 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { blogSeries, getSeriesMeta, getSeriesName, getSeriesSlug, getSeriesUrl } from '../utils/blog';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf()
+);
+
+const seriesEntries = blogSeries
+  .map((series) => {
+    const seriesPosts = posts.filter((post) => getSeriesSlug(post.data.series) === series.slug);
+    const latestPost = seriesPosts[0];
+    const meta = getSeriesMeta(series.slug);
+    const name = getSeriesName(series.slug);
+
+    return {
+      name,
+      slug: series.slug,
+      posts: seriesPosts,
+      cover: meta.cover,
+      updatedAt: latestPost?.data.publishedAt.valueOf() ?? 0
+    };
+  })
+  .sort((a, b) => b.updatedAt - a.updatedAt);
+---
+
+<BaseLayout>
+  <div class="space-y-4" data-series-root>
+    <div class="blog-list-header">
+      <span class="sr-only">시리즈 목록</span>
+      <div class="blog-list-tools">
+        <p class="type-small text-ink/58">
+          {seriesEntries.length} / {seriesEntries.length}
+        </p>
+        <div class="blog-sort-toggle" aria-label="시리즈 정렬">
+          <button
+            type="button"
+            class="blog-sort-button blog-sort-button-active"
+            data-series-sort-button
+            data-sort-value="updated"
+          >
+            <span data-i18n-ko="최신 업데이트순" data-i18n-en="Recently updated">최신 업데이트순</span>
+          </button>
+          <span class="blog-sort-separator" aria-hidden="true">|</span>
+          <button type="button" class="blog-sort-button" data-series-sort-button data-sort-value="name">
+            <span data-i18n-ko="ㄱㄴㄷ순" data-i18n-en="A-Z">ㄱㄴㄷ순</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="blog-series-page-grid" data-series-list>
+      {
+        seriesEntries.map((series) => (
+          <a
+            class="blog-series-cover-card"
+            href={getSeriesUrl(series.slug)}
+            data-series-card
+            data-series-name={series.name}
+            data-series-updated={series.updatedAt}
+          >
+            <div class="blog-series-cover-media">
+              {
+                series.cover ? (
+                  <img src={series.cover} alt="" loading="lazy" />
+                ) : (
+                  <div class="blog-series-cover-placeholder" aria-hidden="true">
+                    {series.name.slice(0, 1)}
+                  </div>
+                )
+              }
+            </div>
+            <div class="blog-series-cover-info">
+              <h1 class="blog-series-cover-title">{series.name}</h1>
+              <p
+                class="blog-series-cover-count"
+                data-i18n-ko={`${series.posts.length}개 글`}
+                data-i18n-en={`${series.posts.length} posts`}
+              >
+                {series.posts.length}개 글
+              </p>
+            </div>
+          </a>
+        ))
+      }
+    </div>
+
+    <nav class="blog-pagination" aria-label="시리즈 페이지" data-series-pagination hidden></nav>
+  </div>
+
+  <script is:inline>
+    (() => {
+      const list = document.querySelector('[data-series-list]');
+      if (!(list instanceof HTMLElement)) return;
+
+      const cards = Array.from(document.querySelectorAll('[data-series-card]'));
+      const sortButtons = Array.from(document.querySelectorAll('[data-series-sort-button]'));
+      const pagination = document.querySelector('[data-series-pagination]');
+      const pageSize = 9;
+      let activeSort = 'updated';
+      let activePage = 1;
+
+      const getSortedCards = () =>
+        [...cards].sort((a, b) => {
+          if (activeSort === 'name') {
+            const aName = a.getAttribute('data-series-name') || '';
+            const bName = b.getAttribute('data-series-name') || '';
+            return aName.localeCompare(bName, 'ko-KR');
+          }
+
+          const aUpdated = Number(a.getAttribute('data-series-updated') || 0);
+          const bUpdated = Number(b.getAttribute('data-series-updated') || 0);
+          return bUpdated - aUpdated;
+        });
+
+      const createPaginationButton = (label, page, disabled = false, current = false) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'blog-pagination-button';
+        button.textContent = label;
+        button.disabled = disabled;
+        button.setAttribute('aria-label', `${page}페이지로 이동`);
+        if (current) {
+          button.classList.add('blog-pagination-button-active');
+          button.setAttribute('aria-current', 'page');
+        }
+        button.addEventListener('click', () => {
+          activePage = page;
+          applySort();
+        });
+        return button;
+      };
+
+      const renderPagination = (totalPages) => {
+        if (!(pagination instanceof HTMLElement)) return;
+        pagination.replaceChildren();
+        pagination.hidden = totalPages <= 1;
+        if (totalPages <= 1) return;
+
+        pagination.appendChild(createPaginationButton('<<', 1, activePage === 1));
+        pagination.appendChild(createPaginationButton('<', Math.max(1, activePage - 1), activePage === 1));
+
+        for (let page = 1; page <= totalPages; page += 1) {
+          pagination.appendChild(createPaginationButton(String(page), page, false, page === activePage));
+        }
+
+        pagination.appendChild(
+          createPaginationButton('>', Math.min(totalPages, activePage + 1), activePage === totalPages)
+        );
+        pagination.appendChild(createPaginationButton('>>', totalPages, activePage === totalPages));
+      };
+
+      const applySort = () => {
+        const sortedCards = getSortedCards();
+        const totalPages = Math.max(1, Math.ceil(sortedCards.length / pageSize));
+        activePage = Math.min(activePage, totalPages);
+        const pageStart = (activePage - 1) * pageSize;
+        const pageEnd = pageStart + pageSize;
+        const pageCards = new Set(sortedCards.slice(pageStart, pageEnd));
+
+        sortedCards.forEach((card) => {
+          card.toggleAttribute('hidden', !pageCards.has(card));
+          list.appendChild(card);
+        });
+        sortButtons.forEach((button) => {
+          button.classList.toggle(
+            'blog-sort-button-active',
+            button.getAttribute('data-sort-value') === activeSort
+          );
+        });
+        renderPagination(totalPages);
+      };
+
+      sortButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          activeSort = button.getAttribute('data-sort-value') || 'updated';
+          activePage = 1;
+          applySort();
+        });
+      });
+
+      applySort();
+    })();
+  </script>
+</BaseLayout>

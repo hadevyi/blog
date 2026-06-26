@@ -1,0 +1,116 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ContentCard from '../../components/ContentCard.astro';
+import { siteMeta } from '../../data/site';
+import { blogSeries, getPostUrl, getSeriesMeta, getSeriesName, getSeriesSlug } from '../../utils/blog';
+import { formatDate } from '../../utils/format';
+
+export async function getStaticPaths() {
+  const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf()
+  );
+  return blogSeries.map((series) => ({
+    params: { slug: series.slug },
+    props: {
+      seriesName: getSeriesName(series.slug),
+      seriesSlug: series.slug,
+      posts: posts.filter((post) => getSeriesSlug(post.data.series) === series.slug)
+    }
+  }));
+}
+
+interface Props {
+  seriesName: string;
+  seriesSlug: string;
+  posts: CollectionEntry<'blog'>[];
+}
+
+const { seriesName, seriesSlug, posts } = Astro.props;
+const latestPost = posts[0];
+const firstPost = posts.at(-1);
+const seriesMeta = getSeriesMeta(seriesSlug);
+const description = seriesMeta.description;
+const seriesUrl = new URL(`${siteMeta.rootPath}series/${seriesSlug}/`, siteMeta.siteUrl).toString();
+const seriesStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: seriesName,
+  description,
+  url: seriesUrl,
+  hasPart: posts.map((post) => ({
+    '@type': 'BlogPosting',
+    headline: post.data.title,
+    url: new URL(`${siteMeta.rootPath}${post.data.number}/`, siteMeta.siteUrl).toString(),
+    datePublished: post.data.publishedAt.toISOString()
+  }))
+};
+---
+
+<BaseLayout
+  title={seriesName}
+  description={description}
+  image={seriesMeta.cover}
+  structuredData={seriesStructuredData}
+>
+  <div class="blog-series-detail-page">
+    <section class="blog-series-detail-header">
+      <div class="blog-series-detail-media">
+        {
+          seriesMeta.cover ? (
+            <img src={seriesMeta.cover} alt="" loading="lazy" />
+          ) : (
+            <div class="blog-series-cover-placeholder" aria-hidden="true">
+              {seriesName.slice(0, 1)}
+            </div>
+          )
+        }
+      </div>
+
+      <div class="blog-series-detail-copy">
+        <p class="eyebrow" data-i18n-ko="시리즈" data-i18n-en="Series">시리즈</p>
+        <h1 class="blog-series-detail-title">{seriesName}</h1>
+        <p class="blog-series-detail-description">{description}</p>
+        <div class="blog-series-detail-meta-row">
+          <div class="blog-series-detail-meta">
+            <p
+              data-i18n-ko={`${posts.length}개 글`}
+              data-i18n-en={`${posts.length} posts`}
+            >
+              {posts.length}개 글
+            </p>
+            {latestPost ? <time>{formatDate(latestPost.data.publishedAt)} 업데이트</time> : null}
+          </div>
+          {
+            firstPost ? (
+              <a
+                class="blog-series-start-link"
+                href={getPostUrl(firstPost)}
+                data-i18n-ko="첫 글 보기"
+                data-i18n-en="Read first post"
+              >
+                첫 글 보기
+              </a>
+            ) : null
+          }
+        </div>
+      </div>
+    </section>
+
+    <div class="blog-post-list blog-post-list-list blog-post-list-after-series">
+      {
+        posts.map((post) => (
+          <ContentCard
+            href={getPostUrl(post)}
+            title={post.data.title}
+            description={post.data.excerpt}
+            meta={post.data.category}
+            date={formatDate(post.data.publishedAt)}
+            tags={post.data.tags}
+            cover={post.data.cover}
+          />
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

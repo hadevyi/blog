@@ -1,4 +1,5 @@
 ---
+import FloatingControls from '../components/FloatingControls.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import { siteMeta } from '../data/site';
@@ -8,22 +9,38 @@ interface Props {
   title?: string;
   description?: string;
   lang?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  publishedAt?: Date;
+  updatedAt?: Date;
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-const { title, description = siteMeta.description, lang = 'ko' } = Astro.props;
+const {
+  title,
+  description = siteMeta.description,
+  lang = 'ko',
+  image,
+  type = 'website',
+  publishedAt,
+  updatedAt,
+  structuredData
+} = Astro.props;
 const pageTitle = title ? `${title} | ${siteMeta.title}` : siteMeta.title;
 const canonicalUrl = new URL(Astro.url.pathname, siteMeta.siteUrl).toString();
+const imageUrl = image ? new URL(image, siteMeta.siteUrl).toString() : undefined;
 const faviconSvg = `${siteMeta.rootPath}favicon.svg?v=hadevyi-mark-a1`;
 const faviconIco = `${siteMeta.rootPath}favicon.ico`;
 const gaId = import.meta.env.PUBLIC_GA_ID;
 const googleSiteVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
+const structuredDataJson = structuredData ? JSON.stringify(structuredData) : undefined;
 ---
 
 <!doctype html>
 <html lang={lang} data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#ffffff" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous" />
@@ -46,14 +63,42 @@ const googleSiteVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
     <meta name="description" content={description} />
     <meta name="robots" content="index,follow" />
     <link rel="canonical" href={canonicalUrl} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={type} />
     <meta property="og:site_name" content={siteMeta.title} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
+    {imageUrl && <meta property="og:image" content={imageUrl} />}
+    {publishedAt && <meta property="article:published_time" content={publishedAt.toISOString()} />}
+    {updatedAt && <meta property="article:modified_time" content={updatedAt.toISOString()} />}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
+    {imageUrl && <meta name="twitter:image" content={imageUrl} />}
+    {structuredDataJson && <script is:inline type="application/ld+json" set:html={structuredDataJson} />}
+    <script is:inline>
+      (() => {
+        const themeStorageKey = 'hadevyi-theme';
+        const langStorageKey = 'hadevyi-lang';
+        const root = document.documentElement;
+        const savedTheme = localStorage.getItem(themeStorageKey);
+        const savedLang = localStorage.getItem(langStorageKey);
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const resolvedTheme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : prefersDark ? 'dark' : 'light';
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+        root.dataset.theme = resolvedTheme;
+        root.style.colorScheme = resolvedTheme;
+
+        if (savedLang === 'ko' || savedLang === 'en') {
+          root.lang = savedLang;
+        }
+
+        if (themeColorMeta) {
+          themeColorMeta.setAttribute('content', resolvedTheme === 'dark' ? '#101014' : '#faf9fd');
+        }
+      })();
+    </script>
     {googleSiteVerification && (
       <meta name="google-site-verification" content={googleSiteVerification} />
     )}
@@ -76,10 +121,11 @@ const googleSiteVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
   <body>
     <div class="relative min-h-screen overflow-x-hidden">
       <SiteHeader />
-      <main class="mx-auto w-full max-w-[62rem] px-5 pb-24 pt-4 sm:px-8 lg:px-10">
+      <main class="mx-auto w-full max-w-[62rem] px-5 pb-14 pt-4 sm:px-8 lg:px-10">
         <slot />
       </main>
       <SiteFooter />
+      <FloatingControls />
     </div>
   </body>
 </html>

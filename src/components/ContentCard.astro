@@ -1,36 +1,52 @@
 ---
+import { getTagMeta } from '../utils/blog';
+
 interface Props {
   href: string;
   title: string;
   description: string;
   meta?: string;
+  date?: string;
   tags?: string[];
+  cover?: string;
 }
 
-const { href, title, description, meta, tags = [] } = Astro.props;
+const { href, title, description, meta, date, tags = [], cover } = Astro.props;
+const tagItems = tags.map((tag) => getTagMeta(tag));
 ---
 
 <a
   href={href}
-  class="surface-card group block h-full p-6 no-underline transition-transform duration-200 hover:-translate-y-1"
+  class="content-card surface-card group block h-full p-5 no-underline transition-colors duration-150 sm:p-6"
 >
-  <div class="flex items-start justify-between gap-4">
-    {meta ? <p class="type-label uppercase text-ink/45">{meta}</p> : <span></span>}
-    <span class="type-subsection-title text-ink/30 transition-colors duration-200 group-hover:text-accent">
-      ↗
-    </span>
-  </div>
-  <h2 class="type-section-title mt-4 max-w-xl text-ink transition-colors duration-200 group-hover:text-accent">
-    {title}
-  </h2>
-  <p class="type-small mt-4 max-w-2xl text-ink/72">{description}</p>
-  {
-    tags.length > 0 && (
-      <div class="mt-6 flex flex-wrap gap-2">
-        {tags.map((tag) => (
-          <span class="chip">{tag}</span>
-        ))}
+  <div class="content-card-inner">
+    {
+      cover ? (
+        <div class="content-card-cover" aria-hidden="true">
+          <img src={cover} alt="" loading="lazy" />
+        </div>
+      ) : null
+    }
+    <div class="content-card-copy">
+      <div class="flex items-start justify-between gap-4">
+        <h2 class="content-card-title type-subsection-title max-w-2xl text-ink transition-colors duration-200 group-hover:text-accent">
+          {title}
+        </h2>
+        {date ? <time class="content-card-date type-small text-ink/45">{date}</time> : null}
       </div>
-    )
-  }
+      <p class="content-card-description type-small mt-2 max-w-2xl text-ink/72">{description}</p>
+      <div class="content-card-meta-row mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+        {meta ? <p class:list={['content-card-meta type-small text-ink/52', tags.length > 0 && 'content-card-meta-with-tags']}>{meta}</p> : null}
+        {
+          tags.length > 0 && (
+            <p class="content-card-tags type-small text-ink/52">
+              {tagItems.map((tag) => (
+                <span class="content-card-tag" data-i18n-ko={`#${tag.ko}`} data-i18n-en={`#${tag.en}`}>#{tag.ko}</span>
+              ))}
+            </p>
+          )
+        }
+      </div>
+    </div>
+  </div>
 </a>
