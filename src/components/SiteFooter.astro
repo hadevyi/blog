@@ -2,48 +2,71 @@
 import SocialIconLinks from './SocialIconLinks.astro';
 import { siteMeta, socialLinks } from '../data/site';
 
+const i18nText = (ko: string, en: string) => ({
+  'data-i18n-ko': ko,
+  'data-i18n-en': en
+});
+
 const ecosystemLinks = [
   {
     href: 'https://hadevyi.github.io/',
-    label: '공식 홈페이지'
+    labelKo: '공식 홈페이지',
+    labelEn: 'Official Website'
   },
   {
     href: 'https://hadevyi.github.io/resume/',
-    label: '이력서'
+    labelKo: '이력서',
+    labelEn: 'Resume'
   },
   {
     href: 'https://hadevyi.github.io/portfolio/',
-    label: '포트폴리오'
+    labelKo: '포트폴리오',
+    labelEn: 'Portfolio'
   },
   {
     href: 'https://hadevyi.github.io/experience/',
-    label: '경험 정리'
+    labelKo: '경험 정리',
+    labelEn: 'Experience'
   },
   {
     href: 'https://hadevyi.github.io/blog/',
-    label: '블로그'
+    labelKo: '블로그',
+    labelEn: 'Blog'
   }
 ] as const;
 
 const contactEmail = 'hadevyi@gmail.com';
-const contactLinks = [
-  { label: 'Email', href: `mailto:${contactEmail}` },
-  ...socialLinks
-] as const;
-const usageNotice =
-  '본 사이트는 정상적인 검색 엔진의 공개 페이지 색인을 허용합니다.\n다만 별도 허가 없는 대량 크롤링, 무단 수집, 복제, 재배포, 재사용, 사칭 및 허위 사용은 금합니다.\n위반 시 민형사상 법적 조치를 진행할 수 있습니다.';
-const analyticsNotice =
-  '본 사이트는 서비스 개선과 방문 통계 확인을 위해 Google Analytics를 사용합니다.\nGoogle Analytics는 방문 페이지, 접속 환경, 대략적인 지역 정보 등 비식별 분석 데이터를 수집할 수 있습니다.\n수집된 데이터는 사이트 이용 현황을 파악하고 콘텐츠와 사용성을 개선하는 목적으로만 활용됩니다.';
+const contactLinks = [{ label: 'Email', href: `mailto:${contactEmail}` }, ...socialLinks] as const;
+const brandLabel = {
+  ko: '당현아 공식 홈페이지',
+  en: 'Dang Hyeona Official Website'
+} as const;
+const usageNotice = {
+  ko: '본 사이트는 정상적인 검색 엔진의 공개 페이지 색인을 허용합니다.\n다만 별도 허가 없는 대량 크롤링, 무단 수집, 복제, 재배포, 재사용, 사칭 및 허위 사용은 금합니다.\n위반 시 민형사상 법적 조치를 진행할 수 있습니다.',
+  en: 'This site allows public indexing by standard search engines.\nHowever, bulk crawling, unauthorized collection, copying, redistribution, reuse, impersonation, or false use without permission is prohibited.\nViolations may result in civil or criminal legal action.'
+} as const;
+const analyticsNotice = {
+  ko: '본 사이트는 서비스 개선과 방문 통계 확인을 위해 Google Analytics를 사용합니다.\nGoogle Analytics는 방문 페이지, 접속 환경, 대략적인 지역 정보 등 비식별 분석 데이터를 수집할 수 있습니다.\n수집된 데이터는 사이트 이용 현황을 파악하고 콘텐츠와 사용성을 개선하는 목적으로만 활용됩니다.',
+  en: 'This site uses Google Analytics to improve the service and review visit statistics.\nGoogle Analytics may collect non-identifying analytics data such as visited pages, access environment, and approximate location information.\nCollected data is used only to understand site usage and improve content and usability.'
+} as const;
 const copyrightNotice = '© 2026 Dang Hyeona. All rights reserved.';
-const brandLabel = '당현아 공식 홈페이지';
-const brandLabelEn = 'Dang Hyeona Official Website';
+const usageNoticeLabel = {
+  ko: '이용 및 저작권 안내',
+  en: 'Usage and copyright notice'
+} as const;
+const analyticsNoticeLabel = {
+  ko: '분석 도구 안내',
+  en: 'Analytics notice'
+} as const;
 ---
 
 <footer class="site-footer">
   <div class="mx-auto flex w-full max-w-[62rem] flex-col gap-2 px-5 py-4 sm:px-8 lg:px-10">
     <div class="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
       <div class="type-caption flex flex-wrap items-center gap-x-3 gap-y-1.5 text-ink/55">
-        <p class="font-medium text-ink/78" data-i18n-ko={brandLabel} data-i18n-en={brandLabelEn}>{brandLabel}</p>
+        <p class="font-medium text-ink/78" {...i18nText(brandLabel.ko, brandLabel.en)}>
+          {brandLabel.ko}
+        </p>
         <SocialIconLinks links={contactLinks} compact={true} />
       </div>
 
@@ -58,22 +81,7 @@ const brandLabelEn = 'Dang Hyeona Official Website';
                 aria-current={isCurrent ? 'page' : undefined}
                 class:list={[isCurrent ? 'footer-inline-link-current' : 'footer-inline-link']}
               >
-                <span
-                  data-i18n-ko={item.label}
-                  data-i18n-en={
-                    item.label === '공식 홈페이지'
-                      ? 'Home'
-                      : item.label === '이력서'
-                        ? 'Resume'
-                        : item.label === '포트폴리오'
-                          ? 'Portfolio'
-                          : item.label === '경험 정리'
-                            ? 'Experience'
-                            : 'Blog'
-                  }
-                >
-                  {item.label}
-                </span>
+                <span {...i18nText(item.labelKo, item.labelEn)}>{item.labelKo}</span>
               </a>
             );
           })
@@ -85,22 +93,20 @@ const brandLabelEn = 'Dang Hyeona Official Website';
       <p>{copyrightNotice}</p>
       <div class="footer-legal-notices">
         <details class="footer-legal-notice">
-          <summary data-i18n-ko="이용 및 저작권 안내" data-i18n-en="Usage and copyright notice">이용 및 저작권 안내</summary>
-          <p data-i18n-content="ko">{usageNotice}</p>
-          <p data-i18n-content="en" hidden>
-            This site allows normal public search engine indexing.
-            Unauthorized bulk crawling, collection, copying, redistribution, reuse, impersonation, or false use is prohibited.
-            Legal action may be taken for violations.
+          <summary {...i18nText(usageNoticeLabel.ko, usageNoticeLabel.en)}>
+            {usageNoticeLabel.ko}
+          </summary>
+          <p {...i18nText(usageNotice.ko, usageNotice.en)}>
+            {usageNotice.ko}
           </p>
         </details>
         <span class="footer-legal-separator" aria-hidden="true">|</span>
         <details class="footer-legal-notice">
-          <summary data-i18n-ko="분석 도구 안내" data-i18n-en="Analytics notice">분석 도구 안내</summary>
-          <p data-i18n-content="ko">{analyticsNotice}</p>
-          <p data-i18n-content="en" hidden>
-            This site may use Google Analytics to review visit statistics and improve the service.
-            Google Analytics may collect non-identifying analytics data such as visited pages, access environment, and approximate region.
-            Collected data is used only to understand site usage and improve content and usability.
+          <summary {...i18nText(analyticsNoticeLabel.ko, analyticsNoticeLabel.en)}>
+            {analyticsNoticeLabel.ko}
+          </summary>
+          <p {...i18nText(analyticsNotice.ko, analyticsNotice.en)}>
+            {analyticsNotice.ko}
           </p>
         </details>
       </div>

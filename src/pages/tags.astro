@@ -48,11 +48,12 @@ const allTagEntries = [...tagEntries, ...fallbackTags];
             class="blog-sort-button blog-sort-button-active"
             data-tag-sort-button
             data-sort-value="count"
+            aria-pressed="true"
           >
             <span data-i18n-ko="글 많은순" data-i18n-en="Most used">글 많은순</span>
           </button>
           <span class="blog-sort-separator" aria-hidden="true">|</span>
-          <button type="button" class="blog-sort-button" data-tag-sort-button data-sort-value="name">
+          <button type="button" class="blog-sort-button" data-tag-sort-button data-sort-value="name" aria-pressed="false">
             <span data-i18n-ko="ㄱㄴㄷ순" data-i18n-en="A-Z">ㄱㄴㄷ순</span>
           </button>
         </div>
@@ -108,10 +109,9 @@ const allTagEntries = [...tagEntries, ...fallbackTags];
       const applySort = () => {
         getSortedCards().forEach((card) => list.appendChild(card));
         sortButtons.forEach((button) => {
-          button.classList.toggle(
-            'blog-sort-button-active',
-            button.getAttribute('data-sort-value') === activeSort
-          );
+          const isActive = button.getAttribute('data-sort-value') === activeSort;
+          button.classList.toggle('blog-sort-button-active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
         });
       };
 

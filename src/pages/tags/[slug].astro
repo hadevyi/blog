@@ -74,11 +74,12 @@ const tagStructuredData = {
             class="blog-sort-button blog-sort-button-active"
             data-sort-button
             data-sort-value="desc"
+            aria-pressed="true"
           >
             <span data-i18n-ko="최신순" data-i18n-en="Newest">최신순</span>
           </button>
           <span class="blog-sort-separator" aria-hidden="true">|</span>
-          <button type="button" class="blog-sort-button" data-sort-button data-sort-value="asc">
+          <button type="button" class="blog-sort-button" data-sort-button data-sort-value="asc" aria-pressed="false">
             <span data-i18n-ko="오래된순" data-i18n-en="Oldest">오래된순</span>
           </button>
         </div>
@@ -124,13 +125,13 @@ const tagStructuredData = {
           return activeSort === 'asc' ? aDate - bDate : bDate - aDate;
         });
 
-      const createPaginationButton = (label, page, disabled = false, current = false) => {
+      const createPaginationButton = (label, page, disabled = false, current = false, ariaLabel = `${page}페이지로 이동`) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'blog-pagination-button';
         button.textContent = label;
         button.disabled = disabled;
-        button.setAttribute('aria-label', `${page}페이지로 이동`);
+        button.setAttribute('aria-label', ariaLabel);
         if (current) {
           button.classList.add('blog-pagination-button-active');
           button.setAttribute('aria-current', 'page');
@@ -148,17 +149,25 @@ const tagStructuredData = {
         pagination.hidden = totalPages <= 1;
         if (totalPages <= 1) return;
 
-        pagination.appendChild(createPaginationButton('<<', 1, activePage === 1));
-        pagination.appendChild(createPaginationButton('<', Math.max(1, activePage - 1), activePage === 1));
+        pagination.appendChild(createPaginationButton('«', 1, activePage === 1, false, '첫 페이지로 이동'));
+        pagination.appendChild(
+          createPaginationButton('‹', Math.max(1, activePage - 1), activePage === 1, false, '이전 페이지로 이동')
+        );
 
         for (let page = 1; page <= totalPages; page += 1) {
           pagination.appendChild(createPaginationButton(String(page), page, false, page === activePage));
         }
 
         pagination.appendChild(
-          createPaginationButton('>', Math.min(totalPages, activePage + 1), activePage === totalPages)
+          createPaginationButton(
+            '›',
+            Math.min(totalPages, activePage + 1),
+            activePage === totalPages,
+            false,
+            '다음 페이지로 이동'
+          )
         );
-        pagination.appendChild(createPaginationButton('>>', totalPages, activePage === totalPages));
+        pagination.appendChild(createPaginationButton('»', totalPages, activePage === totalPages, false, '마지막 페이지로 이동'));
       };
 
       const applySort = () => {
@@ -166,10 +175,9 @@ const tagStructuredData = {
 
         getSortedItems().forEach((item) => list.appendChild(item));
         sortButtons.forEach((button) => {
-          button.classList.toggle(
-            'blog-sort-button-active',
-            button.getAttribute('data-sort-value') === activeSort
-          );
+          const isActive = button.getAttribute('data-sort-value') === activeSort;
+          button.classList.toggle('blog-sort-button-active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
         });
       };
 
