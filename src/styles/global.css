@@ -1932,7 +1932,7 @@ html[data-theme='light'] {
     border-color: var(--theme-border);
   }
 
-  .blog-post-navigation-link:hover {
+  a.blog-post-navigation-link:hover {
     background-color: color-mix(in srgb, var(--theme-accent-mark) 6%, transparent);
   }
 
@@ -1958,11 +1958,6 @@ html[data-theme='light'] {
   .blog-post-navigation-link-disabled {
     @apply m-0 cursor-default;
     color: var(--theme-ink-faint);
-  }
-
-  .blog-post-navigation-link-disabled:hover {
-    border-color: var(--theme-border);
-    background-color: transparent;
   }
 
   .blog-post-navigation-link-disabled span,
