@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import { unified } from '@astrojs/markdown-remark';
 
 import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
@@ -10,6 +11,10 @@ export default defineConfig({
   site: 'https://hadevyi.github.io',
   base: '/blog',
   output: 'static',
+  compressHTML: true,
+  markdown: {
+    processor: unified({ gfm: false })
+  },
   vite: {
     plugins: [tailwindcss()]
   },
